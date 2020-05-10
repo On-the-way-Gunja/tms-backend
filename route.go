@@ -1,17 +1,27 @@
 package main
 
 import (
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-
 	"net/http"
 )
 
-type KeyRequestForm struct {
-	Key string `json:"key"`
-}
+type (
+	KeyRequestForm struct {
+		Key string `json:"key" validate:"required"`
+	}
 
-type TokenResponseForm struct {
-	Token string `json:"token"`
+	TokenResponseForm struct {
+		Token string `json:"token" validate:"required"`
+	}
+
+	Validator struct {
+		validator *validator.Validate
+	}
+)
+
+func (cv *Validator) Validate(i interface{}) error {
+	return cv.validator.Struct(i)
 }
 
 // @summary API 자격증명 토큰을 발급합니다
@@ -27,6 +37,11 @@ type TokenResponseForm struct {
 func rIssueToken(c echo.Context) error {
 	req := KeyRequestForm{}
 	if err := c.Bind(&req); err != nil {
+		c.Logger().Error(err)
+		return c.NoContent(http.StatusBadRequest)
+	}
+
+	if err := c.Validate(req); err != nil {
 		c.Logger().Error(err)
 		return c.NoContent(http.StatusBadRequest)
 	}

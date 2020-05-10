@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	elogrus "github.com/dictor/echologrus"
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	_ "github.com/on-the-way-gunja/prototype/docs"
 	"github.com/swaggo/echo-swagger"
@@ -22,6 +23,8 @@ func main() {
 	f := new(prefixed.TextFormatter)
 	f.FullTimestamp = true
 	elogrus.Attach(e).Logger.Formatter = f
+
+	e.Validator = &Validator{validator: validator.New()}
 
 	if err := setAccessKey("keys.txt"); err != nil {
 		e.Logger.Fatal(err)
