@@ -12,6 +12,8 @@ require (
 	github.com/labstack/echo/v4 v4.1.16
 	github.com/mailru/easyjson v0.7.1 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
+	github.com/muesli/clusters v0.0.0-20190807044042-ba9c57dd9228
+	github.com/muesli/kmeans v0.0.0-20200416122607-bb4104b438d6
 	github.com/swaggo/echo-swagger v1.0.0
 	github.com/swaggo/swag v1.6.5
 	github.com/urfave/cli v1.22.4 // indirect

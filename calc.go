@@ -1,5 +1,12 @@
 package main
 
+import (
+	"fmt"
+	"github.com/muesli/clusters"
+	"github.com/muesli/kmeans"
+	"math"
+)
+
 type (
 	//Coordinate is basic definition of coorinate. It using for directing any senders or stuffs.
 	Coordinate struct {
@@ -31,13 +38,54 @@ type (
 	}
 )
 
-func calculateActions(req CalculateRequest) CalculateResult {
-	return CalculateResult{map[string][]DriverAction{"0": []DriverAction{DriverAction{true, "0"}}}} //Mock for test
+func calculateActions(req CalculateRequest) (*CalculateResult, error) {
+	_, err := getKmeanCluster(extractCoordinate("center", &req.Stuffs), len(req.Drivers))
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
 }
 
-func mockCalculateActions(req CalculateRequest) CalculateResult {
+func extractCoordinate(opt string, stuffs *[]Stuff) []*Coordinate {
+	res := []*Coordinate{}
+	for _, s := range *stuffs {
+		switch opt {
+		case "send":
+			res = append(res, &s.SenderPosition)
+		case "recv":
+			res = append(res, &s.ReceieverPosition)
+		case "center":
+			res = append(res, &Coordinate{
+				fmt.Sprintf("c-%d-%d", s.SenderPosition.Id, s.ReceieverPosition.Id),
+				(s.SenderPosition.Lat + s.ReceieverPosition.Lat) / 2,
+				(s.SenderPosition.Long + s.ReceieverPosition.Long) / 2},
+			)
+		}
+	}
+	return res
+}
+
+func normalizeCoordinate(c *Coordinate) *Coordinate {
+	d := math.Sqrt(math.Pow(c.Lat, 2) + math.Pow(c.Long, 2))
+	return &Coordinate{c.Id, c.Lat / d, c.Long / d}
+}
+
+func getKmeanCluster(points []*Coordinate, clusterCount int) (clusters.Clusters, error) {
+	var d clusters.Observations
+	for _, p := range points {
+		p = normalizeCoordinate(p)
+		d = append(d, clusters.Coordinates{
+			p.Lat,
+			p.Long,
+		})
+	}
+	km := kmeans.New()
+	return km.Partition(d, clusterCount)
+}
+
+func mockCalculateActions(req CalculateRequest) (*CalculateResult, error) {
 	//Mock result for test
-	return CalculateResult{
+	return &CalculateResult{
 		map[string][]DriverAction{
 			"0": []DriverAction{
 				DriverAction{true, "0"},
@@ -60,5 +108,5 @@ func mockCalculateActions(req CalculateRequest) CalculateResult {
 				DriverAction{false, "5"},
 			},
 		},
-	}
+	}, nil
 }

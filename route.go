@@ -28,7 +28,7 @@ type (
 	}
 )
 
-// @summary API 자격증명 토큰을 발급합니다
+// @summary API 자격증명 토큰을 발급합니다.
 // @description 액세스 키를 제출받고, 유효한 액세스키라면 API 자격증명 토큰을 발급합니다
 // @id issue-token
 // @accept json
@@ -68,6 +68,7 @@ func rIssueToken(c echo.Context) error {
 // @success 200 {object} CalculateResult "요청에 대한 배송 경로가 반환됩니다."
 // @failure 400 "요청이 정해진 형식에 부합히지 않습니다."
 // @failure 401 "액세스 키가 유효하지 않습니다."
+// @failure 500 "처리 중 서버 내부 오류가 발생했습니다."
 // @router /path [POST]
 func rCalculatePath(c echo.Context) error {
 	if tok := c.Request().Header.Get("API-TOKEN"); tok == "" {
@@ -84,5 +85,10 @@ func rCalculatePath(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	return c.JSON(http.StatusOK, mockCalculateActions(req))
+	if d, err := mockCalculateActions(req); err != nil {
+		return c.NoContent(http.StatusInternalServerError)
+	} else {
+		return c.JSON(http.StatusOK, d)
+	}
+
 }

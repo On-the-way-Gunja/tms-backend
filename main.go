@@ -11,6 +11,8 @@ import (
 	"io/ioutil"
 )
 
+//build : /home/ubuntu/go/bin/swag init && go build && sudo ./proto*
+
 //Struct validator
 type Validator struct {
 	validator *validator.Validate
