@@ -3,9 +3,9 @@ package main
 type (
 	//Coordinate is basic definition of coorinate. It using for directing any senders or stuffs.
 	Coordinate struct {
-		Id   string  `json:"id"`   //Coordinate's id
-		Lat  float64 `json:"lat"`  //Latitude
-		Long float64 `json:"long"` //Longitude
+		Id   string  `json:"id" validate:"required"` //Coordinate's id
+		Lat  float64 `json:"lat"`                    //Latitude
+		Long float64 `json:"long"`                   //Longitude
 	}
 
 	//Driver expresses current available shipping driver.
@@ -24,21 +24,10 @@ type (
 		ReceieverPosition Coordinate `json:"recver_position"` //Receiver's position
 	}
 
-	//CalculateRequest is structure for api request.
-	CalculateRequest struct {
-		Drivers []Driver `json:"drivers"` //Current available drivers data
-		Stuffs  []Stuff  `json:"stuffs"`  //Current available stuffs data
-	}
-
 	//DriverAction express every driver's action.
 	DriverAction struct {
 		IsPickup bool   `json:"is_pickup"` //True if current action is picking stuff up. False if deliver stuff down.
 		StuffId  string `json:"stuff_id"`  //Targer stuff's id
-	}
-
-	//CalculateResult is structure for api response.
-	CalculateResult struct {
-		Actions map[string][]DriverAction `json:"actions"` //key is Driver's id
 	}
 )
 

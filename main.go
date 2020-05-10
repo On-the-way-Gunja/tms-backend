@@ -11,6 +11,16 @@ import (
 	"io/ioutil"
 )
 
+//Struct validator
+type Validator struct {
+	validator *validator.Validate
+}
+
+//Validate function
+func (cv *Validator) Validate(i interface{}) error {
+	return cv.validator.Struct(i)
+}
+
 // @title OWT Prototype API
 // @version 1.0
 // @contact.email kimdictor@gmail.com

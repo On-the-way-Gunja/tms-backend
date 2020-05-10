@@ -7,35 +7,40 @@ import (
 )
 
 type (
-	KeyRequestForm struct {
+	//KeyRequest is form of issueing token request.
+	KeyRequest struct {
 		Key string `json:"key" validate:"required"`
 	}
 
-	TokenResponseForm struct {
-		Token string `json:"token" validate:"required"`
+	//TokenResponse is form of issueing token response.
+	TokenResponse struct {
+		Token string `json:"token"`
 	}
 
-	Validator struct {
-		validator *validator.Validate
+	//CalculateRequest is structure for api request.
+	CalculateRequest struct {
+		Drivers []Driver `json:"drivers" validate:"required"` //Current available drivers data
+		Stuffs  []Stuff  `json:"stuffs" validate:"required"`  //Current available stuffs data
+	}
+
+	//CalculateResult is structure for api response.
+	CalculateResult struct {
+		Actions map[string][]DriverAction `json:"actions"` //key is Driver's id
 	}
 )
-
-func (cv *Validator) Validate(i interface{}) error {
-	return cv.validator.Struct(i)
-}
 
 // @summary API 자격증명 토큰을 발급합니다
 // @description 액세스 키를 제출받고, 유효한 액세스키라면 API 자격증명 토큰을 발급합니다
 // @id issue-token
 // @accept json
 // @produce json
-// @param key body KeyRequestForm true "액세스 키"
-// @success 200 {object} TokenResponseForm "유효한 액세스 키를 제출했을때 API 자격증명 토큰이 반환됩니다."
+// @param key body KeyRequest true "액세스 키"
+// @success 200 {object} TokenResponse "유효한 액세스 키를 제출했을때 API 자격증명 토큰이 반환됩니다."
 // @failure 400 "요청이 정해진 형식에 부합하지 않습니다."
 // @failure 401 "액세스 키가 유효하지 않습니다."
 // @router /token [POST]
 func rIssueToken(c echo.Context) error {
-	req := KeyRequestForm{}
+	req := KeyRequest{}
 	if err := c.Bind(&req); err != nil {
 		c.Logger().Error(err)
 		return c.NoContent(http.StatusBadRequest)
@@ -47,7 +52,7 @@ func rIssueToken(c echo.Context) error {
 	}
 
 	if searchSlice(req.Key, &validAccessKey) {
-		return c.JSON(http.StatusOK, TokenResponseForm{newToken().Token})
+		return c.JSON(http.StatusOK, TokenResponse{newToken().Token})
 	} else {
 		return c.NoContent(http.StatusUnauthorized)
 	}
