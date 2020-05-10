@@ -21,10 +21,12 @@ func (cv *Validator) Validate(i interface{}) error {
 	return cv.validator.Struct(i)
 }
 
-// @title OWT Prototype API
+// @title OTW Prototype API
 // @version 1.0
 // @contact.email kimdictor@gmail.com
-// @license.name exclusive-closed
+// @description On the Way's api prototype for demonstraning technology.
+
+// @license.name exclusive-closed license
 
 func main() {
 	e := echo.New()
