@@ -34,3 +34,31 @@ type (
 func calculateActions(req CalculateRequest) CalculateResult {
 	return CalculateResult{map[string][]DriverAction{"0": []DriverAction{DriverAction{true, "0"}}}} //Mock for test
 }
+
+func mockCalculateActions(req CalculateRequest) CalculateResult {
+	//Mock result for test
+	return CalculateResult{
+		map[string][]DriverAction{
+			"0": []DriverAction{
+				DriverAction{true, "0"},
+				DriverAction{true, "1"},
+				DriverAction{false, "1"},
+				DriverAction{false, "0"},
+			},
+			"1": []DriverAction{
+				DriverAction{true, "2"},
+				DriverAction{false, "2"},
+				DriverAction{true, "3"},
+				DriverAction{false, "3"},
+			},
+			"2": []DriverAction{
+				DriverAction{true, "4"},
+				DriverAction{true, "5"},
+				DriverAction{true, "6"},
+				DriverAction{false, "6"},
+				DriverAction{false, "4"},
+				DriverAction{false, "5"},
+			},
+		},
+	}
+}

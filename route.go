@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
@@ -85,5 +84,5 @@ func rCalculatePath(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	return c.JSON(http.StatusOK, calculateActions(req))
+	return c.JSON(http.StatusOK, mockCalculateActions(req))
 }
