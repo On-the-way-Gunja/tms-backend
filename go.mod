@@ -1,4 +1,4 @@
-module github.com/on-the-way-gunja/prototype
+module github.com/on-the-way-gunja/tms-backend
 
 go 1.14
 
@@ -14,8 +14,10 @@ require (
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/muesli/clusters v0.0.0-20190807044042-ba9c57dd9228
 	github.com/muesli/kmeans v0.0.0-20200416122607-bb4104b438d6
+	github.com/stretchr/testify v1.4.0
 	github.com/swaggo/echo-swagger v1.0.0
 	github.com/swaggo/swag v1.6.5
+	github.com/tidwall/pretty v1.0.1
 	github.com/urfave/cli v1.22.4 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	golang.org/x/net v0.0.0-20200506145744-7e3656a0809f // indirect
