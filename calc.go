@@ -39,7 +39,7 @@ type (
 )
 
 func calculateActions(req CalculateRequest) (*CalculateResult, error) {
-	_, err := getKmeanCluster(extractCoordinate("center", &req.Stuffs), len(req.Drivers))
+	_, err := GetKmeanCluster(extractCoordinate("center", &req.Stuffs), len(req.Drivers))
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func extractCoordinate(opt string, stuffs *[]Stuff) []*Coordinate {
 			res = append(res, &s.ReceieverPosition)
 		case "center":
 			res = append(res, &Coordinate{
-				fmt.Sprintf("c-%d-%d", s.SenderPosition.Id, s.ReceieverPosition.Id),
+				fmt.Sprintf("c-%s-%s", s.SenderPosition.Id, s.ReceieverPosition.Id),
 				(s.SenderPosition.Lat + s.ReceieverPosition.Lat) / 2,
 				(s.SenderPosition.Long + s.ReceieverPosition.Long) / 2},
 			)
@@ -70,10 +70,10 @@ func normalizeCoordinate(c *Coordinate) *Coordinate {
 	return &Coordinate{c.Id, c.Lat / d, c.Long / d}
 }
 
-func getKmeanCluster(points []*Coordinate, clusterCount int) (clusters.Clusters, error) {
+func GetKmeanCluster(points []*Coordinate, clusterCount int) (clusters.Clusters, error) {
 	var d clusters.Observations
 	for _, p := range points {
-		p = normalizeCoordinate(p)
+		//p = normalizeCoordinate(p)
 		d = append(d, clusters.Coordinates{
 			p.Lat,
 			p.Long,
