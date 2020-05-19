@@ -42,11 +42,6 @@ func TestKmean(t *testing.T) {
 	kmeanResult = cs
 }
 
-func estConvertCluster(t *testing.T) {
-	fmt.Println(aurora.Bold(aurora.BgMagenta("Convert")))
-	//fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, convertClusters(mockRequest, kmeanResult))), nil)))
-}
-
 func mustMarshal(t *testing.T, i interface{}) []byte {
 	j, err := json.Marshal(i)
 	assert.NoError(t, err)
