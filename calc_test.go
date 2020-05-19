@@ -10,22 +10,10 @@ import (
 	"testing"
 )
 
-var mockCoordinate []*Coordinate = []*Coordinate{
-	&Coordinate{"test1", 0.0, 0.0},
-	&Coordinate{"test2", 1.0, 1.0},
-	&Coordinate{"test3", -1.0, 1.0},
-	&Coordinate{"test4", 1.0, -1.0},
-	&Coordinate{"test5", -1.0, -1.0},
-	&Coordinate{"test6", 11.0, 11.0},
-	&Coordinate{"test7", 9.0, 11.0},
-	&Coordinate{"test8", 11.0, 9.0},
-	&Coordinate{"test9", 9.0, 9.0},
-}
-
 var mockRequest CalculateRequest = CalculateRequest{
 	Drivers: []Driver{
 		Driver{"John", Coordinate{"d1", 0, 0}, 100},
-		Driver{"John", Coordinate{"d2", 100, 100}, 100},
+		Driver{"David", Coordinate{"d2", 100, 100}, 100},
 	},
 	Stuffs: []Stuff{
 		Stuff{"apple", "Kim", Coordinate{"s1s", 12.73, 14.94}, "Ha", Coordinate{"s1r", 72.12, 9.43}},

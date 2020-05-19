@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/muesli/clusters"
 	"github.com/muesli/kmeans"
-	"math"
 )
 
 type (
