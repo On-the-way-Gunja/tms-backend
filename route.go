@@ -50,7 +50,7 @@ func rIssueToken(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	if searchSlice(req.Key, &validAccessKey) {
+	if searchSlice(req.Key, &Config.AccessKey) {
 		return c.JSON(http.StatusOK, TokenResponse{newToken().Token})
 	} else {
 		return c.NoContent(http.StatusUnauthorized)

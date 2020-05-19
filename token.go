@@ -5,8 +5,7 @@ import (
 )
 
 var (
-	validAccessKey []string = make([]string, 0)
-	issuedToken    []*Token = make([]*Token, 0)
+	issuedToken []*Token = make([]*Token, 0)
 )
 
 const expireDuration time.Duration = time.Minute * 30
