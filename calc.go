@@ -8,13 +8,6 @@ import (
 )
 
 type (
-	//Coordinate is basic definition of coorinate. It using for directing any senders or stuffs.
-	Coordinate struct {
-		Id   string  `json:"id" validate:"required"` //Coordinate's id
-		Lat  float64 `json:"lat"`                    //Latitude
-		Long float64 `json:"long"`                   //Longitude
-	}
-
 	//Driver expresses current available shipping driver.
 	Driver struct {
 		Id          string     `json:"id"`           //Driver's name
@@ -38,6 +31,24 @@ type (
 	}
 )
 
+/*
+	Coordinate is basic definition of coorinate. It using for directing any senders or stuffs.
+	It implements (github.com/muesli/clusters).Observation interface for compatible with kmean library
+*/
+type Coordinate struct {
+	Id   string  `json:"id" validate:"required"` //Coordinate's id
+	Lat  float64 `json:"lat"`                    //Latitude
+	Long float64 `json:"long"`                   //Longitude
+}
+
+func (c Coordinate) Coordinates() clusters.Coordinates {
+	return clusters.Coordinates([]float64{c.Lat, c.Long})
+}
+
+func (c Coordinate) Distance(point clusters.Coordinates) float64 {
+	return c.Coordinates().Distance(point)
+}
+
 func calculateActions(req CalculateRequest) (*CalculateResult, error) {
 	_, err := GetKmeanCluster(extractCoordinate("center", &req.Stuffs), len(req.Drivers))
 	if err != nil {
@@ -46,6 +57,7 @@ func calculateActions(req CalculateRequest) (*CalculateResult, error) {
 	return nil, nil
 }
 
+//Extract Coordinates from CalculateRequest with given filtering option
 func extractCoordinate(opt string, stuffs *[]Stuff) []*Coordinate {
 	res := []*Coordinate{}
 	for _, s := range *stuffs {
@@ -65,24 +77,17 @@ func extractCoordinate(opt string, stuffs *[]Stuff) []*Coordinate {
 	return res
 }
 
-func normalizeCoordinate(c *Coordinate) *Coordinate {
-	d := math.Sqrt(math.Pow(c.Lat, 2) + math.Pow(c.Long, 2))
-	return &Coordinate{c.Id, c.Lat / d, c.Long / d}
-}
-
+//Calculate kmean cluster from given Coordinates
 func GetKmeanCluster(points []*Coordinate, clusterCount int) (clusters.Clusters, error) {
 	var d clusters.Observations
 	for _, p := range points {
-		//p = normalizeCoordinate(p)
-		d = append(d, clusters.Coordinates{
-			p.Lat,
-			p.Long,
-		})
+		d = append(d, *p)
 	}
 	km := kmeans.New()
 	return km.Partition(d, clusterCount)
 }
 
+//Return mock CalculateResult for testing
 func mockCalculateActions(req CalculateRequest) (*CalculateResult, error) {
 	//Mock result for test
 	return &CalculateResult{
