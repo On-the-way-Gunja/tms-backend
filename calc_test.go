@@ -48,6 +48,24 @@ func TestConvertToPair(t *testing.T) {
 	fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, res)), nil)))
 }
 
+func prepareApiTest() error {
+	InitClient()
+	if c, err := ReadConfig("config.json", nil); err != nil {
+		return err
+	} else {
+		Config = c
+		return nil
+	}
+}
+
+func TestMapApi(t *testing.T) {
+	assert.NoError(t, prepareApiTest())
+	d, err := getRoadDistance(Coordinate{"start", 127.33, 37.5}, Coordinate{"goal", 127.55, 36})
+	assert.NoError(t, err)
+	assert.NotNil(t, d)
+	fmt.Print(aurora.Bold(aurora.BgMagenta("Distance")), *d, "m\n")
+}
+
 func mustMarshal(t *testing.T, i interface{}) []byte {
 	j, err := json.Marshal(i)
 	assert.NoError(t, err)
