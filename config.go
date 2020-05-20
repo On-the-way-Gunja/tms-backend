@@ -22,8 +22,10 @@ func ReadConfig(path string, validator func(i interface{}) error) (*ConfigFormat
 		return nil, err
 	}
 
-	if err := validator(config); err != nil {
-		return nil, err
+	if validator != nil {
+		if err := validator(config); err != nil {
+			return nil, err
+		}
 	}
 
 	return &config, nil
