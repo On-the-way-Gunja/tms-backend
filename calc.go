@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/muesli/clusters"
 	"github.com/muesli/kmeans"
+	"strings"
 )
 
 type (
@@ -48,6 +49,19 @@ func (c Coordinate) Distance(point clusters.Coordinates) float64 {
 	return c.Coordinates().Distance(point)
 }
 
+type (
+	PairCluster struct {
+		Center clusters.Observation
+		Pairs  []Pair
+	}
+
+	Pair struct {
+		Id    string
+		Start Coordinate
+		Goal  Coordinate
+	}
+)
+
 func calculateActions(req CalculateRequest) (*CalculateResult, error) {
 	_, err := GetKmeanCluster(extractCoordinate("center", &req.Stuffs), len(req.Drivers))
 	if err != nil {
@@ -84,6 +98,43 @@ func GetKmeanCluster(points []*Coordinate, clusterCount int) (clusters.Clusters,
 	}
 	km := kmeans.New()
 	return km.Partition(d, clusterCount)
+}
+
+//Convert "center extracted" coordinate to original coordinates pair with given clusters
+func convertCenterToPair(req CalculateRequest, cs clusters.Clusters) []PairCluster {
+	res := []PairCluster{}
+	for _, c := range cs {
+		pc := PairCluster{c.Center, []Pair{}}
+		for _, o := range c.Observations {
+			oc := o.(Coordinate)
+			if strings.Index(oc.Id, "c-") == 0 {
+				ids := strings.Split(oc.Id, "-")
+				cstart := searchCoordinateById(req, ids[1])
+				cgoal := searchCoordinateById(req, ids[2])
+				pc.Pairs = append(pc.Pairs, Pair{oc.Id, *cstart, *cgoal})
+			}
+		}
+		res = append(res, pc)
+	}
+	return res
+}
+
+//Search coordinate which has given id from CalcualteRequest
+func searchCoordinateById(req CalculateRequest, id string) *Coordinate {
+	for _, s := range req.Stuffs {
+		if s.SenderPosition.Id == id {
+			return &s.SenderPosition
+		}
+		if s.ReceieverPosition.Id == id {
+			return &s.ReceieverPosition
+		}
+	}
+	for _, d := range req.Drivers {
+		if d.Position.Id == id {
+			return &d.Position
+		}
+	}
+	return nil
 }
 
 //Return mock CalculateResult for testing

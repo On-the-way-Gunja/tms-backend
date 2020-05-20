@@ -42,6 +42,12 @@ func TestKmean(t *testing.T) {
 	kmeanResult = cs
 }
 
+func TestConvertToPair(t *testing.T) {
+	res := convertCenterToPair(mockRequest, kmeanResult)
+	fmt.Println(aurora.Bold(aurora.BgMagenta("Result to Pair")))
+	fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, res)), nil)))
+}
+
 func mustMarshal(t *testing.T, i interface{}) []byte {
 	j, err := json.Marshal(i)
 	assert.NoError(t, err)
