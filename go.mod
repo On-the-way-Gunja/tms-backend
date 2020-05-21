@@ -3,6 +3,7 @@ module github.com/on-the-way-gunja/tms-backend
 go 1.14
 
 require (
+	github.com/RyanCarrier/dijkstra v1.0.0
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/dictor/echologrus v1.0.0

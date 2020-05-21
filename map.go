@@ -3,27 +3,17 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/RyanCarrier/dijkstra"
 	"github.com/go-resty/resty/v2"
+	"github.com/muesli/clusters"
 )
 
 var globalClient *resty.Client
-
-type NaverResponse struct {
-	Code            int                    `json:"code"`
-	Message         string                 `json:"message"`
-	CurrentDateTime string                 `json:"currentDateTime"`
-	Route           map[string]interface{} `json:"route"`
-}
-
-func MakeDistanceGraph() {
-
-}
 
 func InitClient() {
 	globalClient = resty.New()
 }
 
-//https://apidocs.ncloud.com/ko/ai-naver/maps_directions/driving/
 func getRoadDistance(start, goal Coordinate) (d *float64, err error) {
 	resp, err := globalClient.R().
 		SetHeader("X-NCP-APIGW-API-KEY-ID", Config.NaverClientId).
@@ -67,4 +57,71 @@ func getRoadDistance(start, goal Coordinate) (d *float64, err error) {
 
 func coordToNaverFormat(c Coordinate) string {
 	return fmt.Sprintf("%f,%f", c.Lat, c.Long)
+}
+
+func MakeDistanceGraph(pcs []PairCluster, errorf func(format string, args ...interface{})) ClusterGraph {
+	res := map[*clusters.Observation]*dijkstra.Graph{}
+	for _, pc := range pcs {
+		g := dijkstra.NewGraph()
+		cs := extractPairsToCoords(pc.Pairs)
+
+		//Add verticles
+		for _, c := range cs {
+			g.AddMappedVertex(c.Id)
+		}
+
+		//Add arcs
+		for i := 0; i < len(cs)-1; i++ {
+			for j := i + 1; j < len(cs); j++ {
+				if d, err := getRoadDistance(cs[i], cs[j]); err != nil {
+					if errorf != nil {
+						errorf("make distance graph error: %s\n", err)
+					}
+				} else {
+					g.AddMappedArc(cs[i].Id, cs[j].Id, int64(*d))
+				}
+			}
+		}
+
+		res[&pc.Center] = g
+	}
+	return res
+}
+
+func AssignDriverToGraphs(gs ClusterGraph, drivers []Driver) map[string]*dijkstra.Graph {
+	driverCluster := map[string]*dijkstra.Graph{}
+	for _, d := range drivers {
+		driverCluster[d.Id] = nil
+	}
+
+	driverPosition := extractDriversToCoords(drivers)
+	for {
+		for driverId, driverCoord := range driverPosition {
+			if driverCluster[driverId] == nil {
+				distance := 9999999999.00
+				for gObs, g := range gs {
+					if driverCoord.Distance(*gObs.Coordinates()) < distance {
+						driverCluster[driverId] = g
+					}
+				}
+			}
+		}
+
+		nilCounter := 0
+		for k, v := range driverCluster {
+			if v == nil {
+				nilCounter++
+			}
+		}
+		if nilCounter == 0 {
+			break
+		}
+	}
+	return driverCluster
+}
+
+func FindPath(graphs map[string]*dijkstra.Graph, drivers []Driver) []dijkstra.BestPath {
+	for graphName, graph := range graphs {
+		graph.Shortest()
+	}
 }

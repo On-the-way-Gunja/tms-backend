@@ -5,29 +5,6 @@ import (
 	"net/http"
 )
 
-type (
-	//KeyRequest is form of issueing token request.
-	KeyRequest struct {
-		Key string `json:"key" validate:"required"`
-	}
-
-	//TokenResponse is form of issueing token response.
-	TokenResponse struct {
-		Token string `json:"token"`
-	}
-
-	//CalculateRequest is structure for api request.
-	CalculateRequest struct {
-		Drivers []Driver `json:"drivers" validate:"required"` //Current available drivers data
-		Stuffs  []Stuff  `json:"stuffs" validate:"required"`  //Current available stuffs data
-	}
-
-	//CalculateResult is structure for api response.
-	CalculateResult struct {
-		Actions map[string][]DriverAction `json:"actions"` //key is Driver's id
-	}
-)
-
 // @summary API 자격증명 토큰을 발급합니다.
 // @description 액세스 키를 제출받고, 유효한 액세스키라면 API 자격증명 토큰을 발급합니다
 // @id issue-token

@@ -10,12 +10,6 @@ var (
 
 const expireDuration time.Duration = time.Minute * 30
 
-//Token is issued to approved users.
-type Token struct {
-	Token      string    //Token string
-	IssuedTime time.Time //Issued datetime
-}
-
 func newToken() *Token {
 	tok := Token{randString(32), time.Now()}
 	issuedToken = append(issuedToken, &tok)

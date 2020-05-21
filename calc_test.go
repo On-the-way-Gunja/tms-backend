@@ -10,24 +10,31 @@ import (
 	"testing"
 )
 
+var (
+	POSITION_DONGDAEMOON       Coordinate = Coordinate{"신평화패션타운", 127.01168167917474, 37.56946547219505}
+	POSITION_SEOULSTATION      Coordinate = Coordinate{"서울역", 126.97055261318205, 37.55463197345425}
+	POSITION_HANYANGUNIV       Coordinate = Coordinate{"한양대학교", 127.04531599177925, 37.55772638076536}
+	POSITION_GANGNAMHYUNDAIAPT Coordinate = Coordinate{"강남현대아파트", 127.02442463468053, 37.52635073205962}
+	POSITION_GALLERIAFOREST    Coordinate = Coordinate{"서울숲갤러리아포레", 127.04240066671743, 37.54593339811107}
+)
+
 var mockRequest CalculateRequest = CalculateRequest{
 	Drivers: []Driver{
 		Driver{"John", Coordinate{"d1", 0, 0}, 100},
 		Driver{"David", Coordinate{"d2", 100, 100}, 100},
 	},
 	Stuffs: []Stuff{
-		Stuff{"apple", "Kim", Coordinate{"s1s", 12.73, 14.94}, "Ha", Coordinate{"s1r", 72.12, 9.43}},
-		Stuff{"grape", "Jang", Coordinate{"s2s", 78.16, 58.54}, "Won", Coordinate{"s2r", 78.20, 45.62}},
-		Stuff{"chicken", "Park", Coordinate{"s3s", 97.46, 41.98}, "Go", Coordinate{"s3r", 36.43, 93.96}},
-		Stuff{"pizza", "Choi", Coordinate{"s4s", 43.48, 85.71}, "Hwang", Coordinate{"s4r", 85.21, 34.98}},
-		Stuff{"soup", "Min", Coordinate{"s5s", 79.35, 91.31}, "Nho", Coordinate{"s5r", 20.38, 75.61}},
-		Stuff{"hamberger", "Hong", Coordinate{"s6s", 24.89, 35.96}, "Jeon", Coordinate{"s6r", 65.73, 23.05}},
-		Stuff{"rice", "Mo", Coordinate{"s7s", 59.21, 25.48}, "Moon", Coordinate{"s7r", 25.23, 0.65}},
-		Stuff{"ramen", "Woo", Coordinate{"s8s", 23.65, 11.74}, "Son", Coordinate{"s8r", 98.64, 21.28}},
+		Stuff{"후드티", "김기범", POSITION_DONGDAEMOON, "김정현", POSITION_GANGNAMHYUNDAIAPT},
+		Stuff{"청바지", "김기범", POSITION_DONGDAEMOON, "조현재", POSITION_HANYANGUNIV},
+		Stuff{"원단", "김기범", POSITION_DONGDAEMOON, "임동영", POSITION_GALLERIAFOREST},
 	},
 }
 
-var kmeanResult clusters.Clusters
+var (
+	kmeanResult       clusters.Clusters
+	pairClusterResult []PairCluster
+	graphResult       ClusterGraph
+)
 
 func TestKmean(t *testing.T) {
 	coords := extractCoordinate("center", &mockRequest.Stuffs)
@@ -43,9 +50,18 @@ func TestKmean(t *testing.T) {
 }
 
 func TestConvertToPair(t *testing.T) {
-	res := convertCenterToPair(mockRequest, kmeanResult)
+	res := convertCenterToPairs(mockRequest, kmeanResult)
 	fmt.Println(aurora.Bold(aurora.BgMagenta("Result to Pair")))
 	fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, res)), nil)))
+	pairClusterResult = res
+}
+
+func TestExtractPairsToCoord(t *testing.T) {
+	for _, p := range pairClusterResult {
+		res := extractPairsToCoords(p.Pairs)
+		fmt.Println(aurora.Bold(aurora.BgMagenta("Pair to Coordinates")))
+		fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, res)), nil)))
+	}
 }
 
 func prepareApiTest() error {
@@ -59,11 +75,27 @@ func prepareApiTest() error {
 }
 
 func TestMapApi(t *testing.T) {
+	return
 	assert.NoError(t, prepareApiTest())
 	d, err := getRoadDistance(Coordinate{"start", 127.33, 37.5}, Coordinate{"goal", 127.55, 36})
 	assert.NoError(t, err)
-	assert.NotNil(t, d)
-	fmt.Print(aurora.Bold(aurora.BgMagenta("Distance")), *d, "m\n")
+	if err != nil {
+		fmt.Print(aurora.Bold(aurora.BgMagenta("Distance")), *d, "m\n")
+	}
+}
+
+func TestDistanceGraph(t *testing.T) {
+	assert.NoError(t, prepareApiTest())
+	gs := MakeDistanceGraph(pairClusterResult, func(format string, args ...interface{}) {
+		//assert.Failf(t, "MakeDistanceGraph() error : ", format, args)
+		fmt.Printf(format, args)
+	})
+
+	for k, g := range gs {
+		fmt.Println(aurora.Bold(aurora.BgMagenta("Graph")), fmt.Sprintf("#%v", k))
+		fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, *g)), nil)))
+	}
+	graphResult = gs
 }
 
 func mustMarshal(t *testing.T, i interface{}) []byte {
