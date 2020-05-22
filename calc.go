@@ -1,17 +1,30 @@
 package main
 
 import (
+	"fmt"
 	"github.com/muesli/clusters"
 	"github.com/muesli/kmeans"
 	"strings"
 )
 
 func calculateActions(req CalculateRequest) (*CalculateResult, error) {
-	_, err := GetKmeanCluster(req.Stuffs.Coordinates("center"), len(req.Drivers))
+	kmean, err := GetKmeanCluster(req.Stuffs.Coordinates("center"), len(req.Drivers))
 	if err != nil {
 		return nil, err
 	}
-	return nil, nil
+	pairs := convertCenterToPairs(req, kmean)
+
+	errors := ""
+	graphs := MakeDistanceGraph(pairs, func(format string, args ...interface{}) {
+		errors += fmt.Sprintf(format, args)
+	})
+	if errors != "" {
+		return nil, fmt.Errorf("MakeDistanceGraph : %s", errors)
+	}
+
+	graphWithDrivers := AssignDriverToGraphs(graphs, req.Drivers)
+	res := FindActions(graphWithDrivers, req)
+	return &res, nil
 }
 
 //Calculate kmean cluster from given Coordinates
