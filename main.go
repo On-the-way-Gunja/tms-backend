@@ -9,7 +9,7 @@ import (
 	"github.com/x-cray/logrus-prefixed-formatter"
 )
 
-//build : /home/ubuntu/go/bin/swag init && go build && sudo ./proto*
+//build : /home/ubuntu/go/bin/swag init && go build && sudo ./tms*
 
 //Struct validator
 type Validator struct {
@@ -46,6 +46,7 @@ func main() {
 	} else {
 		Config = c
 	}
+	InitClient()
 
 	e.GET("/docs/*", echoSwagger.WrapHandler)
 	e.POST("/token", rIssueToken)
