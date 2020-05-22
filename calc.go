@@ -7,7 +7,7 @@ import (
 )
 
 func calculateActions(req CalculateRequest) (*CalculateResult, error) {
-	_, err := GetKmeanCluster(extractCoordinate("center", &req.Stuffs), len(req.Drivers))
+	_, err := GetKmeanCluster(req.Stuffs.Coordinates("center"), len(req.Drivers))
 	if err != nil {
 		return nil, err
 	}
@@ -33,8 +33,8 @@ func convertCenterToPairs(req CalculateRequest, cs clusters.Clusters) []PairClus
 			oc := o.(Coordinate)
 			if strings.Index(oc.Id, "c-") == 0 {
 				ids := strings.Split(oc.Id, "-")
-				cstart := searchReqCoordById(req, ids[1])
-				cgoal := searchReqCoordById(req, ids[2])
+				cstart := searchCoordFromReq(req, ids[1])
+				cgoal := searchCoordFromReq(req, ids[2])
 				pc.Pairs = append(pc.Pairs, Pair{oc.Id, *cstart, *cgoal})
 			}
 		}
@@ -59,33 +59,4 @@ func searchCoordFromReq(req CalculateRequest, id string) *Coordinate {
 		}
 	}
 	return nil
-}
-
-//Return mock CalculateResult for testing
-func mockCalculateActions(req CalculateRequest) (*CalculateResult, error) {
-	//Mock result for test
-	return &CalculateResult{
-		map[string][]DriverAction{
-			"0": []DriverAction{
-				DriverAction{true, "0"},
-				DriverAction{true, "1"},
-				DriverAction{false, "1"},
-				DriverAction{false, "0"},
-			},
-			"1": []DriverAction{
-				DriverAction{true, "2"},
-				DriverAction{false, "2"},
-				DriverAction{true, "3"},
-				DriverAction{false, "3"},
-			},
-			"2": []DriverAction{
-				DriverAction{true, "4"},
-				DriverAction{true, "5"},
-				DriverAction{true, "6"},
-				DriverAction{false, "6"},
-				DriverAction{false, "4"},
-				DriverAction{false, "5"},
-			},
-		},
-	}, nil
 }

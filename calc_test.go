@@ -20,8 +20,8 @@ var (
 
 var mockRequest CalculateRequest = CalculateRequest{
 	Drivers: []Driver{
-		Driver{"John", Coordinate{"d1", 0, 0}, 100},
-		Driver{"David", Coordinate{"d2", 100, 100}, 100},
+		Driver{"김경식", Coordinate{"d1", 0, 0}, 100},
+		Driver{"김진희", Coordinate{"d2", 100, 100}, 100},
 	},
 	Stuffs: []Stuff{
 		Stuff{"후드티", "김기범", POSITION_DONGDAEMOON, "김정현", POSITION_GANGNAMHYUNDAIAPT},
@@ -33,11 +33,12 @@ var mockRequest CalculateRequest = CalculateRequest{
 var (
 	kmeanResult       clusters.Clusters
 	pairClusterResult []PairCluster
-	graphResult       ClusterGraph
+	graphResult       []DistanceGraph
+	driverResult      map[string]*DistanceGraph
 )
 
 func TestKmean(t *testing.T) {
-	coords := extractCoordinate("center", &mockRequest.Stuffs)
+	coords := mockRequest.Stuffs.Coordinates("center")
 	cs, err := GetKmeanCluster(coords, 2)
 	assert.NoError(t, err)
 
@@ -50,15 +51,14 @@ func TestKmean(t *testing.T) {
 }
 
 func TestConvertToPair(t *testing.T) {
-	res := convertCenterToPairs(mockRequest, kmeanResult)
+	pairClusterResult = convertCenterToPairs(mockRequest, kmeanResult)
 	fmt.Println(aurora.Bold(aurora.BgMagenta("Result to Pair")))
-	fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, res)), nil)))
-	pairClusterResult = res
+	fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, pairClusterResult)), nil)))
 }
 
 func TestExtractPairsToCoord(t *testing.T) {
 	for _, p := range pairClusterResult {
-		res := extractPairsToCoords(p.Pairs)
+		res := p.Pairs.Coordinates("all")
 		fmt.Println(aurora.Bold(aurora.BgMagenta("Pair to Coordinates")))
 		fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, res)), nil)))
 	}
@@ -86,16 +86,27 @@ func TestMapApi(t *testing.T) {
 
 func TestDistanceGraph(t *testing.T) {
 	assert.NoError(t, prepareApiTest())
-	gs := MakeDistanceGraph(pairClusterResult, func(format string, args ...interface{}) {
+	graphResult = MakeDistanceGraph(pairClusterResult, func(format string, args ...interface{}) {
 		//assert.Failf(t, "MakeDistanceGraph() error : ", format, args)
 		fmt.Printf(format, args)
 	})
 
-	for k, g := range gs {
-		fmt.Println(aurora.Bold(aurora.BgMagenta("Graph")), fmt.Sprintf("#%v", k))
-		fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, *g)), nil)))
+	for k, g := range graphResult {
+		fmt.Println(aurora.Bold(aurora.BgMagenta("Distance graph")), fmt.Sprintf("#%v", k))
+		fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, g)), nil)))
 	}
-	graphResult = gs
+}
+
+func TestAssignDriver(t *testing.T) {
+	driverResult = AssignDriverToGraphs(graphResult, mockRequest.Drivers)
+	fmt.Println(aurora.Bold(aurora.BgMagenta("Assign driver")))
+	fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, driverResult)), nil)))
+}
+
+func TestFindActions(t *testing.T) {
+	fmt.Println(aurora.Bold(aurora.BgMagenta("Action")))
+	fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, FindActions(driverResult, mockRequest))), nil)))
+
 }
 
 func mustMarshal(t *testing.T, i interface{}) []byte {

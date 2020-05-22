@@ -62,7 +62,7 @@ func rCalculatePath(c echo.Context) error {
 		return c.NoContent(http.StatusBadRequest)
 	}
 
-	if d, err := mockCalculateActions(req); err != nil {
+	if d, err := calculateActions(req); err != nil {
 		return c.NoContent(http.StatusInternalServerError)
 	} else {
 		return c.JSON(http.StatusOK, d)

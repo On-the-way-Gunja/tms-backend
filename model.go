@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"github.com/muesli/clusters"
+	"github.com/yourbasic/graph"
+	"math"
 	"time"
 )
 
@@ -26,8 +29,8 @@ type (
 
 	//DriverAction express every driver's action.
 	DriverAction struct {
-		IsPickup bool   `json:"is_pickup"` //True if current action is picking stuff up. False if deliver stuff down.
-		StuffId  string `json:"stuff_id"`  //Targer stuff's id
+		IsPickup   bool       `json:"is_pickup"`  //True if current action is picking stuff up. False if deliver stuff down.
+		Coordinate Coordinate `json:"coordinate"` //Action's coordinate
 	}
 
 	/*
@@ -53,8 +56,8 @@ type (
 
 	//CalculateRequest is structure for api request.
 	CalculateRequest struct {
-		Drivers []Driver `json:"drivers" validate:"required"` //Current available drivers data
-		Stuffs  Stuffs   `json:"stuffs" validate:"required"`  //Current available stuffs data
+		Drivers Drivers `json:"drivers" validate:"required"` //Current available drivers data
+		Stuffs  Stuffs  `json:"stuffs" validate:"required"`  //Current available stuffs data
 	}
 
 	//CalculateResult is structure for api response.
@@ -97,8 +100,15 @@ type (
 		IssuedTime time.Time //Issued datetime
 	}
 
-	ClusterGraph map[*clusters.Observation]*dijkstra.Graph
-	ClusterPath  map[string]dijkstra.BestPath
+	DistanceGraph struct {
+		Center           clusters.Observation
+		StartGraph       *graph.Mutable
+		StartCoordinates Coordinates
+		StartIds         map[string]int
+		GoalGraph        *graph.Mutable
+		GoalCoordinates  Coordinates
+		GoalIds          map[string]int
+	}
 )
 
 func (c Coordinate) Coordinates() clusters.Coordinates {
@@ -109,6 +119,7 @@ func (c Coordinate) Distance(point clusters.Coordinates) float64 {
 	return c.Coordinates().Distance(point)
 }
 
+/*
 func (c ClusterGraph) Observations() []*clusters.Observation {
 	res := []*clusters.Observation{}
 	for k, _ := range c {
@@ -116,9 +127,10 @@ func (c ClusterGraph) Observations() []*clusters.Observation {
 	}
 	return res
 }
+*/
 
 //Extract Coordinates from CalculateRequest with given filtering option
-func (s Stuffs) Coordinates(opt string) []Coordinate {
+func (s Stuffs) Coordinates(opt string) Coordinates {
 	res := []Coordinate{}
 	for _, s := range s {
 		switch opt {
@@ -138,14 +150,18 @@ func (s Stuffs) Coordinates(opt string) []Coordinate {
 }
 
 //Extract all Coordinates from Pairs
-func (ps Pairs) Coordinates() []Coordinate {
-	res := []Coordinate{}
+func (ps Pairs) Coordinates(opt string) Coordinates {
+	res := Coordinates{}
 	for _, p := range ps {
-		if searchCoordArrayById(res, p.Start.Id) == nil {
-			res = append(res, p.Start)
+		if opt == "all" || opt == "start" {
+			if res.Search(p.Start.Id) == nil {
+				res = append(res, p.Start)
+			}
 		}
-		if searchCoordArrayById(res, p.Goal.Id) == nil {
-			res = append(res, p.Goal)
+		if opt == "all" || opt == "goal" {
+			if res.Search(p.Goal.Id) == nil {
+				res = append(res, p.Goal)
+			}
 		}
 	}
 	return res
@@ -169,7 +185,8 @@ func (cs Coordinates) Search(id string) *Coordinate {
 	return nil
 }
 
-func (dest cluster.Observations) ClosestCoordinate(src cluster.Observation) (res *cluster.Observation, dist float64) {
+func ClosestCoordinate(src Coordinate, dest Coordinates) (res *Coordinate, dist float64) {
+	dist = math.MaxFloat64
 	for _, c := range dest {
 		if d := src.Distance(c.Coordinates()); d <= dist {
 			dist = d

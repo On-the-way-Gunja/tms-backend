@@ -23,6 +23,7 @@ require (
 	github.com/tidwall/pretty v1.0.1
 	github.com/urfave/cli v1.22.4 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
+	github.com/yourbasic/graph v0.0.0-20170921192928-40eb135c0b26
 	golang.org/x/net v0.0.0-20200506145744-7e3656a0809f // indirect
 	golang.org/x/tools v0.0.0-20200509030707-2212a7e161a5 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect

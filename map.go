@@ -3,9 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/RyanCarrier/dijkstra"
 	"github.com/go-resty/resty/v2"
-	"github.com/muesli/clusters"
+	//"github.com/muesli/clusters"
+	"github.com/yourbasic/graph"
+	"math"
 )
 
 var globalClient *resty.Client
@@ -59,56 +60,69 @@ func coordToNaverFormat(c Coordinate) string {
 	return fmt.Sprintf("%f,%f", c.Lat, c.Long)
 }
 
-func MakeDistanceGraph(pcs []PairCluster, errorf func(format string, args ...interface{})) ClusterGraph {
-	res := map[*clusters.Observation]*dijkstra.Graph{}
-	for _, pc := range pcs {
-		g := dijkstra.NewGraph()
-		cs := extractPairsToCoords(pc.Pairs)
-
-		//Add verticles
-		for _, c := range cs {
-			g.AddMappedVertex(c.Id)
+func MakeDistanceGraph(pairClusters []PairCluster, errorf func(format string, args ...interface{})) []DistanceGraph {
+	res := []DistanceGraph{}
+	for _, pairCluster := range pairClusters {
+		dg := DistanceGraph{
+			Center:           pairCluster.Center,
+			StartCoordinates: pairCluster.Pairs.Coordinates("start"),
+			StartIds:         map[string]int{},
+			GoalCoordinates:  pairCluster.Pairs.Coordinates("goal"),
+			GoalIds:          map[string]int{},
 		}
+		dg.StartGraph = graph.New(len(dg.StartCoordinates))
+		dg.GoalGraph = graph.New(len(dg.GoalCoordinates))
 
-		//Add arcs
-		for i := 0; i < len(cs)-1; i++ {
-			for j := i + 1; j < len(cs); j++ {
-				if d, err := getRoadDistance(cs[i], cs[j]); err != nil {
-					if errorf != nil {
-						errorf("make distance graph error: %s\n", err)
-					}
-				} else {
-					g.AddMappedArc(cs[i].Id, cs[j].Id, int64(*d))
-				}
-			}
+		errf := func(f string, i ...interface{}) {
+			fmt.Printf(f, i...)
 		}
-
-		res[&pc.Center] = g
+		fillGraph(dg.StartCoordinates, dg.StartGraph, dg.StartIds, errf)
+		fillGraph(dg.GoalCoordinates, dg.GoalGraph, dg.GoalIds, errf)
+		res = append(res, dg)
 	}
 	return res
 }
 
-func AssignDriverToGraphs(gs ClusterGraph, drivers []Driver) map[string]*dijkstra.Graph {
-	driverCluster := map[string]*dijkstra.Graph{}
+func fillGraph(currentCs Coordinates, currentGraph *graph.Mutable, ids map[string]int, errorf func(string, ...interface{})) {
+	for i := 0; i < len(currentCs)-1; i++ {
+		for j := i + 1; j < len(currentCs); j++ {
+			if d, err := getRoadDistance(currentCs[i], currentCs[j]); err != nil {
+				if errorf != nil {
+					errorf("make distance graph error: %s\n", err)
+				}
+			} else {
+				ids[currentCs[i].Id] = i
+				ids[currentCs[j].Id] = j
+				currentGraph.AddBothCost(i, j, int64(*d))
+			}
+		}
+	}
+}
+
+func AssignDriverToGraphs(graphs []DistanceGraph, drivers Drivers) map[string]*DistanceGraph {
+	driverCluster := map[string]*DistanceGraph{}
 	for _, d := range drivers {
 		driverCluster[d.Id] = nil
 	}
 
-	driverPosition := extractDriversToCoords(drivers)
+	driverPosition := drivers.Coordinates()
 	for {
 		for driverId, driverCoord := range driverPosition {
 			if driverCluster[driverId] == nil {
-				distance := 9999999999.00
-				for gObs, g := range gs {
-					if driverCoord.Distance(*gObs.Coordinates()) < distance {
-						driverCluster[driverId] = g
+				distance := math.MaxFloat64
+				assignedidx := 0
+				for graphidx, graph := range graphs {
+					if driverCoord.Distance(graph.Center.Coordinates()) < distance {
+						driverCluster[driverId] = &graph
+						assignedidx = graphidx
 					}
 				}
+				graphs = append(graphs[:assignedidx], graphs[assignedidx+1:]...)
 			}
 		}
 
 		nilCounter := 0
-		for k, v := range driverCluster {
+		for _, v := range driverCluster {
 			if v == nil {
 				nilCounter++
 			}
@@ -120,8 +134,37 @@ func AssignDriverToGraphs(gs ClusterGraph, drivers []Driver) map[string]*dijkstr
 	return driverCluster
 }
 
-func FindPath(graphs map[string]*dijkstra.Graph, drivers []Driver) []dijkstra.BestPath {
-	for graphName, graph := range graphs {
-		graph.Shortest()
+func FindActions(graphs map[string]*DistanceGraph, req CalculateRequest) CalculateResult {
+	res := CalculateResult{map[string][]DriverAction{}}
+	driverPosition := req.Drivers.Coordinates()
+	for driverId, currentGraph := range graphs {
+		//processing start graph
+		firstStart, _ := ClosestCoordinate(driverPosition[driverId], currentGraph.StartCoordinates) //enterance (first) coordinate of start graph
+		firstStartIndex := currentGraph.StartIds[firstStart.Id]                                     //graph index of above coordinate
+		res.Actions[driverId] = append(res.Actions[driverId], DriverAction{true, *firstStart})      //enterance coordinate is always first action
+		var currentCoord Coordinate                                                                 //temp variable
+		graph.BFS(currentGraph.StartGraph, firstStartIndex, func(v, w int, c int64) {
+			for id, idx := range currentGraph.StartIds {
+				if idx == w {
+					currentCoord = *currentGraph.StartCoordinates.Search(id)
+				}
+			}
+			res.Actions[driverId] = append(res.Actions[driverId], DriverAction{true, currentCoord})
+		})
+		finalStart := currentCoord //final assigned temp coordinate is final (exit) coordinate of start graph
+
+		//process goal graph
+		firstGoal, _ := ClosestCoordinate(finalStart, currentGraph.GoalCoordinates)            //search enterance coodinate of goal graph
+		firstGoalIndex := currentGraph.GoalIds[firstGoal.Id]                                   //graph index of right above coorinate
+		res.Actions[driverId] = append(res.Actions[driverId], DriverAction{false, *firstGoal}) //enterance coordinate is always first action
+		graph.BFS(currentGraph.GoalGraph, firstGoalIndex, func(v, w int, c int64) {
+			for id, idx := range currentGraph.GoalIds {
+				if idx == w {
+					currentCoord = *currentGraph.GoalCoordinates.Search(id)
+				}
+			}
+			res.Actions[driverId] = append(res.Actions[driverId], DriverAction{false, currentCoord})
+		})
 	}
+	return res
 }
