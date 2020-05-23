@@ -65,7 +65,7 @@ func TestExtractPairsToCoord(t *testing.T) {
 }
 
 func prepareApiTest() error {
-	InitClient()
+	InitMapClient()
 	if c, err := ReadConfig("config.json", nil); err != nil {
 		return err
 	} else {
@@ -77,7 +77,7 @@ func prepareApiTest() error {
 func TestMapApi(t *testing.T) {
 	return
 	assert.NoError(t, prepareApiTest())
-	d, err := getRoadDistance(Coordinate{"start", 127.33, 37.5}, Coordinate{"goal", 127.55, 36})
+	d, err := getRoadDistance(Coordinate{"start", 127.33, 37.5}, Coordinate{"goal", 127.55, 36}, nil)
 	assert.NoError(t, err)
 	if err != nil {
 		fmt.Print(aurora.Bold(aurora.BgMagenta("Distance")), *d, "m\n")
@@ -89,7 +89,7 @@ func TestDistanceGraph(t *testing.T) {
 	graphResult = MakeDistanceGraph(pairClusterResult, func(format string, args ...interface{}) {
 		//assert.Failf(t, "MakeDistanceGraph() error : ", format, args)
 		fmt.Printf(format, args)
-	})
+	}, nil)
 
 	for k, g := range graphResult {
 		fmt.Println(aurora.Bold(aurora.BgMagenta("Distance graph")), fmt.Sprintf("#%v", k))
@@ -107,6 +107,13 @@ func TestFindActions(t *testing.T) {
 	fmt.Println(aurora.Bold(aurora.BgMagenta("Action")))
 	fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, FindActions(driverResult, mockRequest))), nil)))
 
+}
+
+func TestCalculateActions(t *testing.T) {
+	r, err := calculateActions(mockRequest)
+	assert.NoError(t, err)
+	fmt.Println(aurora.Bold(aurora.BgMagenta("Final")))
+	fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, r)), nil)))
 }
 
 func mustMarshal(t *testing.T, i interface{}) []byte {

@@ -46,7 +46,7 @@ func main() {
 	} else {
 		Config = c
 	}
-	InitClient()
+	InitMapClient()
 
 	e.GET("/docs/*", echoSwagger.WrapHandler)
 	e.POST("/token", rIssueToken)

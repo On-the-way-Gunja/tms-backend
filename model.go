@@ -62,7 +62,8 @@ type (
 
 	//CalculateResult is structure for api response.
 	CalculateResult struct {
-		Actions map[string][]DriverAction `json:"actions"` //key is Driver's id
+		Actions    map[string][]DriverAction `json:"actions"` //key is Driver's id
+		ApiResults map[string]string         `json:"naver_result"`
 	}
 
 	//PairCluster is pair version of clusters.Cluster
@@ -109,6 +110,7 @@ type (
 		GoalCoordinates  Coordinates
 		GoalIds          map[string]int
 	}
+	DistanceApiHookFunc func(startId, goalId string, result []byte)
 )
 
 func (c Coordinate) Coordinates() clusters.Coordinates {

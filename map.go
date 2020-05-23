@@ -11,11 +11,11 @@ import (
 
 var globalClient *resty.Client
 
-func InitClient() {
+func InitMapClient() {
 	globalClient = resty.New()
 }
 
-func getRoadDistance(start, goal Coordinate) (d *float64, err error) {
+func getRoadDistance(start, goal Coordinate, hook DistanceApiHookFunc) (d *float64, err error) {
 	resp, err := globalClient.R().
 		SetHeader("X-NCP-APIGW-API-KEY-ID", Config.NaverClientId).
 		SetHeader("X-NCP-APIGW-API-KEY", Config.NaverClientSecret).
@@ -45,6 +45,9 @@ func getRoadDistance(start, goal Coordinate) (d *float64, err error) {
 			err = fmt.Errorf("Api response parsing error : %s", r)
 		}
 	}()
+	if hook != nil {
+		hook(start.Id, goal.Id, resp.Body())
+	}
 	for _, v := range res.Route {
 		v = v.([]interface{})[0]
 		v = v.(map[string]interface{})["summary"]
@@ -60,7 +63,7 @@ func coordToNaverFormat(c Coordinate) string {
 	return fmt.Sprintf("%f,%f", c.Lat, c.Long)
 }
 
-func MakeDistanceGraph(pairClusters []PairCluster, errorf func(format string, args ...interface{})) []DistanceGraph {
+func MakeDistanceGraph(pairClusters []PairCluster, errorf func(format string, args ...interface{}), hook DistanceApiHookFunc) []DistanceGraph {
 	res := []DistanceGraph{}
 	for _, pairCluster := range pairClusters {
 		dg := DistanceGraph{
@@ -73,20 +76,17 @@ func MakeDistanceGraph(pairClusters []PairCluster, errorf func(format string, ar
 		dg.StartGraph = graph.New(len(dg.StartCoordinates))
 		dg.GoalGraph = graph.New(len(dg.GoalCoordinates))
 
-		errf := func(f string, i ...interface{}) {
-			fmt.Printf(f, i...)
-		}
-		fillGraph(dg.StartCoordinates, dg.StartGraph, dg.StartIds, errf)
-		fillGraph(dg.GoalCoordinates, dg.GoalGraph, dg.GoalIds, errf)
+		fillGraph(dg.StartCoordinates, dg.StartGraph, dg.StartIds, errorf, hook)
+		fillGraph(dg.GoalCoordinates, dg.GoalGraph, dg.GoalIds, errorf, hook)
 		res = append(res, dg)
 	}
 	return res
 }
 
-func fillGraph(currentCs Coordinates, currentGraph *graph.Mutable, ids map[string]int, errorf func(string, ...interface{})) {
+func fillGraph(currentCs Coordinates, currentGraph *graph.Mutable, ids map[string]int, errorf func(string, ...interface{}), hook DistanceApiHookFunc) {
 	for i := 0; i < len(currentCs)-1; i++ {
 		for j := i + 1; j < len(currentCs); j++ {
-			if d, err := getRoadDistance(currentCs[i], currentCs[j]); err != nil {
+			if d, err := getRoadDistance(currentCs[i], currentCs[j], hook); err != nil {
 				if errorf != nil {
 					errorf("make distance graph error: %s\n", err)
 				}
@@ -135,7 +135,7 @@ func AssignDriverToGraphs(graphs []DistanceGraph, drivers Drivers) map[string]*D
 }
 
 func FindActions(graphs map[string]*DistanceGraph, req CalculateRequest) CalculateResult {
-	res := CalculateResult{map[string][]DriverAction{}}
+	res := CalculateResult{map[string][]DriverAction{}, nil}
 	driverPosition := req.Drivers.Coordinates()
 	for driverId, currentGraph := range graphs {
 		//processing start graph

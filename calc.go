@@ -14,16 +14,21 @@ func calculateActions(req CalculateRequest) (*CalculateResult, error) {
 	}
 	pairs := convertCenterToPairs(req, kmean)
 
+	apiResults := map[string]string{}
+	hook := func(startId, goalId string, result []byte) {
+		apiResults[fmt.Sprintf("%s-%s", startId, goalId)] = string(result)
+	}
 	errors := ""
 	graphs := MakeDistanceGraph(pairs, func(format string, args ...interface{}) {
 		errors += fmt.Sprintf(format, args)
-	})
+	}, hook)
 	if errors != "" {
 		return nil, fmt.Errorf("MakeDistanceGraph : %s", errors)
 	}
 
 	graphWithDrivers := AssignDriverToGraphs(graphs, req.Drivers)
 	res := FindActions(graphWithDrivers, req)
+	res.ApiResults = apiResults
 	return &res, nil
 }
 
