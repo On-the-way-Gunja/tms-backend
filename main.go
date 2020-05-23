@@ -8,6 +8,7 @@ import (
 	_ "github.com/on-the-way-gunja/tms-backend/docs"
 	"github.com/swaggo/echo-swagger"
 	"github.com/x-cray/logrus-prefixed-formatter"
+	"net/http"
 )
 
 //build : /home/ubuntu/go/bin/swag init && go build && sudo ./tms*
@@ -41,6 +42,13 @@ func main() {
 	f.FullTimestamp = true
 	elogrus.Attach(e).Logger.Formatter = f
 
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		Skipper:      middleware.DefaultSkipper,
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete},
+		AllowHeaders: []string{"API-TOKEN"},
+	}))
+
 	//Read config
 	if c, err := ReadConfig("config.json", e.Validator.Validate); err != nil {
 		e.Logger.Fatal(err)
@@ -52,6 +60,5 @@ func main() {
 	e.GET("/docs/*", echoSwagger.WrapHandler)
 	e.POST("/token", rIssueToken)
 	e.POST("/path", rCalculatePath)
-	e.Use(middleware.CORS())
 	e.Logger.Fatal(e.Start(":80"))
 }
