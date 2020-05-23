@@ -4,6 +4,7 @@ import (
 	elogrus "github.com/dictor/echologrus"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/on-the-way-gunja/tms-backend/docs"
 	"github.com/swaggo/echo-swagger"
 	"github.com/x-cray/logrus-prefixed-formatter"
@@ -51,5 +52,6 @@ func main() {
 	e.GET("/docs/*", echoSwagger.WrapHandler)
 	e.POST("/token", rIssueToken)
 	e.POST("/path", rCalculatePath)
+	e.Use(middleware.CORS())
 	e.Logger.Fatal(e.Start(":80"))
 }
