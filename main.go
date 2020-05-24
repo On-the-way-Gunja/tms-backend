@@ -9,6 +9,7 @@ import (
 	"github.com/swaggo/echo-swagger"
 	"github.com/x-cray/logrus-prefixed-formatter"
 	"golang.org/x/crypto/acme/autocert"
+	"log"
 	"net/http"
 )
 
@@ -39,9 +40,12 @@ func main() {
 	e.Validator = &Validator{validator: validator.New()}
 
 	//Set logging
-	f := new(prefixed.TextFormatter)
-	f.FullTimestamp = true
-	elogrus.Attach(e).Logger.Formatter = f
+	el := elogrus.Attach(e)
+	el.Logger.Formatter = new(prefixed.TextFormatter)
+	w := el.Writer()
+	defer w.Close()
+	e.StdLogger = log.New(w, "", 0)
+	log.SetOutput(el.Writer())
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		Skipper:       middleware.DefaultSkipper,
