@@ -56,7 +56,6 @@ func callDistanceApi(start, goal Coordinate) (*[]byte, *NaverResponse, error) {
 	}
 	res := NaverResponse{}
 	if err := json.Unmarshal(body, &res); err != nil {
-		Logger.Trace
 		return &body, nil, err
 	}
 
