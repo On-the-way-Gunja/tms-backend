@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/on-the-way-gunja/tms-backend/docs"
+	"github.com/sirupsen/logrus"
 	"github.com/swaggo/echo-swagger"
 	"github.com/x-cray/logrus-prefixed-formatter"
 	"golang.org/x/crypto/acme/autocert"
@@ -42,7 +43,7 @@ func main() {
 	//Set logging
 	el := elogrus.Attach(e)
 	el.Logger.Formatter = new(prefixed.TextFormatter)
-	w := el.Writer()
+	w := el.WriterLevel(logrus.ErrorLevel)
 	defer w.Close()
 	e.StdLogger = log.New(w, "", 0)
 	log.SetOutput(el.Writer())
