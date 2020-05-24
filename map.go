@@ -47,7 +47,7 @@ func callDistanceApi(start, goal Coordinate) (*[]byte, *NaverResponse, error) {
 		if err != nil {
 			return nil, nil, err
 		}
-		body := resp.Body()
+		body = resp.Body()
 		if resp.StatusCode() != 200 {
 			return &body, nil, fmt.Errorf("Api provider return http response code %d (200 expected)", resp.StatusCode())
 		} else {
@@ -56,6 +56,7 @@ func callDistanceApi(start, goal Coordinate) (*[]byte, *NaverResponse, error) {
 	}
 	res := NaverResponse{}
 	if err := json.Unmarshal(body, &res); err != nil {
+		Logger.Trace
 		return &body, nil, err
 	}
 
