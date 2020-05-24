@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/muesli/clusters"
 	"github.com/yourbasic/graph"
-	"math"
 	"time"
 )
 
@@ -62,8 +61,9 @@ type (
 
 	//CalculateResult is structure for api response.
 	CalculateResult struct {
-		Actions    map[string][]DriverAction `json:"actions"` //key is Driver's id
-		ApiResults map[string]string         `json:"naver_result"`
+		Actions          map[string][]DriverAction `json:"actions"` //key is Driver's id
+		ActualApiResults map[string]string         `json:"naver_actual_result"`
+		EveryApiResults  []PairWithDistance        `json:"naver_every_result"`
 	}
 
 	//PairCluster is pair version of clusters.Cluster
@@ -79,6 +79,11 @@ type (
 		Goal  Coordinate
 	}
 	Pairs []Pair
+
+	PairWithDistance struct {
+		Pair
+		ApiResult *NaverResponse
+	}
 
 	//ConfigFormat is definition of required settings
 	ConfigFormat struct {
@@ -146,6 +151,9 @@ func (s Stuffs) Coordinates(opt string) Coordinates {
 				(s.SenderPosition.Lat + s.ReceieverPosition.Lat) / 2,
 				(s.SenderPosition.Long + s.ReceieverPosition.Long) / 2},
 			)
+		case "all":
+			res = append(res, s.SenderPosition)
+			res = append(res, s.ReceieverPosition)
 		}
 	}
 	return res
@@ -185,15 +193,4 @@ func (cs Coordinates) Search(id string) *Coordinate {
 		}
 	}
 	return nil
-}
-
-func ClosestCoordinate(src Coordinate, dest Coordinates) (res *Coordinate, dist float64) {
-	dist = math.MaxFloat64
-	for _, c := range dest {
-		if d := src.Distance(c.Coordinates()); d <= dist {
-			dist = d
-			res = &c
-		}
-	}
-	return
 }

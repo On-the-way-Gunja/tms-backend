@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/muesli/clusters"
 	"github.com/muesli/kmeans"
+	"math"
 	"strings"
 )
 
@@ -28,8 +29,28 @@ func calculateActions(req CalculateRequest) (*CalculateResult, error) {
 
 	graphWithDrivers := AssignDriverToGraphs(graphs, req.Drivers)
 	res := FindActions(graphWithDrivers, req)
-	res.ApiResults = apiResults
+	res.ActualApiResults = apiResults
+	res.EveryApiResults = calculateAllDistance(req)
 	return &res, nil
+}
+
+func calculateAllDistance(req CalculateRequest) []PairWithDistance {
+	coords := req.Stuffs.Coordinates("all")
+	res := []PairWithDistance{}
+	for i := 0; i < len(coords)-1; i++ {
+		for j := i + 1; j < len(coords); j++ {
+			_, r, _ := callDistanceApi(coords[i], coords[j])
+			res = append(res, PairWithDistance{
+				Pair: Pair{
+					Id:    coords[i].Id + "-" + coords[j].Id,
+					Start: coords[i],
+					Goal:  coords[j],
+				},
+				ApiResult: r,
+			})
+		}
+	}
+	return res
 }
 
 //Calculate kmean cluster from given Coordinates
@@ -77,4 +98,15 @@ func searchCoordFromReq(req CalculateRequest, id string) *Coordinate {
 		}
 	}
 	return nil
+}
+
+func ClosestCoordinate(src Coordinate, dest Coordinates) (res *Coordinate, dist float64) {
+	dist = math.MaxFloat64
+	for _, c := range dest {
+		if d := src.Distance(c.Coordinates()); d <= dist {
+			dist = d
+			res = &c
+		}
+	}
+	return
 }

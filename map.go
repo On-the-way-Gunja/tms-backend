@@ -15,7 +15,7 @@ func InitMapClient() {
 	globalClient = resty.New()
 }
 
-func getRoadDistance(start, goal Coordinate, hook DistanceApiHookFunc) (d *float64, err error) {
+func callDistanceApi(start, goal Coordinate) (*[]byte, *NaverResponse, error) {
 	resp, err := globalClient.R().
 		SetHeader("X-NCP-APIGW-API-KEY-ID", Config.NaverClientId).
 		SetHeader("X-NCP-APIGW-API-KEY", Config.NaverClientSecret).
@@ -25,14 +25,23 @@ func getRoadDistance(start, goal Coordinate, hook DistanceApiHookFunc) (d *float
 		}).
 		Get("https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	body := resp.Body()
 	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("Api provider return http response code %d (200 expected)", resp.StatusCode())
+		return &body, nil, fmt.Errorf("Api provider return http response code %d (200 expected)", resp.StatusCode())
 	}
 
 	res := NaverResponse{}
 	if err := json.Unmarshal(resp.Body(), &res); err != nil {
+		return &body, nil, err
+	}
+	return &body, &res, nil
+}
+
+func getRoadDistance(start, goal Coordinate, hook DistanceApiHookFunc) (d *float64, err error) {
+	resp, res, err := callDistanceApi(start, goal)
+	if err != nil {
 		return nil, err
 	}
 	if res.Code != 0 {
@@ -46,7 +55,7 @@ func getRoadDistance(start, goal Coordinate, hook DistanceApiHookFunc) (d *float
 		}
 	}()
 	if hook != nil {
-		hook(start.Id, goal.Id, resp.Body())
+		hook(start.Id, goal.Id, *resp)
 	}
 	for _, v := range res.Route {
 		v = v.([]interface{})[0]
@@ -135,7 +144,7 @@ func AssignDriverToGraphs(graphs []DistanceGraph, drivers Drivers) map[string]*D
 }
 
 func FindActions(graphs map[string]*DistanceGraph, req CalculateRequest) CalculateResult {
-	res := CalculateResult{map[string][]DriverAction{}, nil}
+	res := CalculateResult{Actions: map[string][]DriverAction{}}
 	driverPosition := req.Drivers.Coordinates()
 	for driverId, currentGraph := range graphs {
 		//processing start graph

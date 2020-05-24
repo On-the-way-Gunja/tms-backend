@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-//build : /home/ubuntu/go/bin/swag init && go build && sudo ./tms*
+//build : ~/go/bin/swag init && go build && sudo ./tms*
 
 //Struct validator
 type Validator struct {
