@@ -90,6 +90,8 @@ type (
 		AccessKey         []string `json:"access_key" validate:"required"`
 		NaverClientId     string   `json:"naver_client_id" validate:"required"`
 		NaverClientSecret string   `json:"naver_client_secret" validate:"required"`
+		EnableTLS         bool     `json:"enable_tls" validate:"required"`
+		TLSDomains        []string `json:"tls_domain" validate:"required"`
 	}
 
 	//NaverResponse is definition of naver api (https://apidocs.ncloud.com/ko/ai-naver/maps_directions/driving) response

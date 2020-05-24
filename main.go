@@ -8,6 +8,7 @@ import (
 	_ "github.com/on-the-way-gunja/tms-backend/docs"
 	"github.com/swaggo/echo-swagger"
 	"github.com/x-cray/logrus-prefixed-formatter"
+	"golang.org/x/crypto/acme/autocert"
 	"net/http"
 )
 
@@ -55,10 +56,20 @@ func main() {
 	} else {
 		Config = c
 	}
+
+	if Config.EnableTLS {
+		e.AutoTLSManager.HostPolicy = autocert.HostWhitelist(Config.TLSDomains...)
+		e.AutoTLSManager.Cache = autocert.DirCache(".cache")
+	}
+
 	InitMapClient()
 
 	e.GET("/docs/*", echoSwagger.WrapHandler)
 	e.POST("/token", rIssueToken)
 	e.POST("/path", rCalculatePath)
-	e.Logger.Fatal(e.Start(":80"))
+	if Config.EnableTLS {
+		e.Logger.Fatal(e.StartAutoTLS(":443"))
+	} else {
+		e.Logger.Fatal(e.Start(":80"))
+	}
 }
