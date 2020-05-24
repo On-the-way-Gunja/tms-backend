@@ -69,7 +69,7 @@ func getRoadDistance(start, goal Coordinate, hook DistanceApiHookFunc) (d *float
 }
 
 func coordToNaverFormat(c Coordinate) string {
-	return fmt.Sprintf("%f,%f", c.Lat, c.Long)
+	return fmt.Sprintf("%f,%f", c.Long, c.Lat)
 }
 
 func MakeDistanceGraph(pairClusters []PairCluster, errorf func(format string, args ...interface{}), hook DistanceApiHookFunc) []DistanceGraph {

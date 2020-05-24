@@ -11,11 +11,11 @@ import (
 )
 
 var (
-	POSITION_DONGDAEMOON       Coordinate = Coordinate{"신평화패션타운", 127.01168167917474, 37.56946547219505}
-	POSITION_SEOULSTATION      Coordinate = Coordinate{"서울역", 126.97055261318205, 37.55463197345425}
-	POSITION_HANYANGUNIV       Coordinate = Coordinate{"한양대학교", 127.04531599177925, 37.55772638076536}
-	POSITION_GANGNAMHYUNDAIAPT Coordinate = Coordinate{"강남현대아파트", 127.02442463468053, 37.52635073205962}
-	POSITION_GALLERIAFOREST    Coordinate = Coordinate{"서울숲갤러리아포레", 127.04240066671743, 37.54593339811107}
+	POSITION_DONGDAEMOON       Coordinate = Coordinate{"신평화패션타운", 37.56946547219505, 127.01168167917474}
+	POSITION_SEOULSTATION      Coordinate = Coordinate{"서울역", 37.55463197345425, 126.97055261318205}
+	POSITION_HANYANGUNIV       Coordinate = Coordinate{"한양대학교", 37.55772638076536, 127.04531599177925}
+	POSITION_GANGNAMHYUNDAIAPT Coordinate = Coordinate{"강남현대아파트", 37.52635073205962, 127.02442463468053}
+	POSITION_GALLERIAFOREST    Coordinate = Coordinate{"서울숲갤러리아포레", 37.54593339811107, 127.04240066671743}
 )
 
 var mockRequest CalculateRequest = CalculateRequest{
@@ -38,13 +38,16 @@ var (
 )
 
 func TestKmean(t *testing.T) {
+	fmt.Println(aurora.Bold(aurora.BgMagenta("Input")))
+	fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, mockRequest)), nil)))
+
 	coords := mockRequest.Stuffs.Coordinates("center")
 	cs, err := GetKmeanCluster(coords, 2)
 	assert.NoError(t, err)
 
-	fmt.Println(aurora.Bold(aurora.BgMagenta("Input")))
+	fmt.Println(aurora.Bold(aurora.BgMagenta("Center Result")))
 	fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, coords)), nil)))
-	fmt.Println(aurora.Bold(aurora.BgMagenta("Result")))
+	fmt.Println(aurora.Bold(aurora.BgMagenta("Kmean Result")))
 	fmt.Println(string(pretty.Color(pretty.Pretty(mustMarshal(t, cs)), nil)))
 
 	kmeanResult = cs
