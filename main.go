@@ -47,7 +47,7 @@ func main() {
 		Skipper:      middleware.DefaultSkipper,
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete},
-		AllowHeaders: []string{"API-TOKEN"},
+		AllowHeaders: []string{"API-TOKEN", "Content-Type"},
 	}))
 
 	//Read config
