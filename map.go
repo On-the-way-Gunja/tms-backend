@@ -6,36 +6,57 @@ import (
 	"github.com/go-resty/resty/v2"
 	//"github.com/muesli/clusters"
 	"github.com/yourbasic/graph"
+	"github.com/zippoxer/bow"
 	"math"
 )
 
 var globalClient *resty.Client
+var cacheDb *bow.DB
 
-func InitMapClient() {
+func InitMap() error {
 	globalClient = resty.New()
+	db, err := bow.Open("api_cache")
+	if err != nil {
+		return err
+	} else {
+		cacheDb = db
+		return nil
+	}
 }
 
 func callDistanceApi(start, goal Coordinate) (*[]byte, *NaverResponse, error) {
-	resp, err := globalClient.R().
-		SetHeader("X-NCP-APIGW-API-KEY-ID", Config.NaverClientId).
-		SetHeader("X-NCP-APIGW-API-KEY", Config.NaverClientSecret).
-		SetQueryParams(map[string]string{
-			"start": coordToNaverFormat(start),
-			"goal":  coordToNaverFormat(goal),
-		}).
-		Get("https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving")
-	if err != nil {
-		return nil, nil, err
-	}
-	body := resp.Body()
-	if resp.StatusCode() != 200 {
-		return &body, nil, fmt.Errorf("Api provider return http response code %d (200 expected)", resp.StatusCode())
+	currentId := start.Id + "-" + goal.Id
+	var body []byte
+	iscached := false
+	if cacheDb.Bucket("distance").Get(currentId, &body) == nil {
+		iscached = true
+		Logger.Tracef("[callDistanceApi] Cache hit! : %s", currentId)
 	}
 
+	if !iscached {
+		resp, err := globalClient.R().
+			SetHeader("X-NCP-APIGW-API-KEY-ID", Config.NaverClientId).
+			SetHeader("X-NCP-APIGW-API-KEY", Config.NaverClientSecret).
+			SetQueryParams(map[string]string{
+				"start": coordToNaverFormat(start),
+				"goal":  coordToNaverFormat(goal),
+			}).
+			Get("https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving")
+		if err != nil {
+			return nil, nil, err
+		}
+		body := resp.Body()
+		if resp.StatusCode() != 200 {
+			return &body, nil, fmt.Errorf("Api provider return http response code %d (200 expected)", resp.StatusCode())
+		} else {
+			cacheDb.Bucket("distance").PutBytes(currentId, body)
+		}
+	}
 	res := NaverResponse{}
-	if err := json.Unmarshal(resp.Body(), &res); err != nil {
+	if err := json.Unmarshal(body, &res); err != nil {
 		return &body, nil, err
 	}
+
 	return &body, &res, nil
 }
 

@@ -27,6 +27,7 @@ func (cv *Validator) Validate(i interface{}) error {
 }
 
 var Config *ConfigFormat
+var Logger *logrus.Logger
 
 // @title OTW Prototype API
 // @version 1.0
@@ -42,6 +43,7 @@ func main() {
 
 	//Set logging
 	el := elogrus.Attach(e)
+	Logger = el.Logger
 	el.Logger.Formatter = new(prefixed.TextFormatter)
 	w := el.WriterLevel(logrus.ErrorLevel)
 	defer w.Close()
@@ -55,6 +57,7 @@ func main() {
 		AllowHeaders:  []string{"API-TOKEN", echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 		ExposeHeaders: []string{"API-TOKEN", echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
+	e.Use(middleware.Recover())
 
 	//Read config
 	if c, err := ReadConfig("config.json", e.Validator.Validate); err != nil {
@@ -68,7 +71,7 @@ func main() {
 		e.AutoTLSManager.Cache = autocert.DirCache(".cache")
 	}
 
-	InitMapClient()
+	InitMap()
 
 	e.GET("/docs/*", echoSwagger.WrapHandler)
 	e.POST("/token", rIssueToken)
