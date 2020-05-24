@@ -44,10 +44,11 @@ func main() {
 	elogrus.Attach(e).Logger.Formatter = f
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		Skipper:      middleware.DefaultSkipper,
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete},
-		AllowHeaders: []string{"API-TOKEN", echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+		Skipper:       middleware.DefaultSkipper,
+		AllowOrigins:  []string{"*"},
+		AllowMethods:  []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete},
+		AllowHeaders:  []string{"API-TOKEN", echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+		ExposeHeaders: []string{"API-TOKEN", echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
 
 	//Read config
