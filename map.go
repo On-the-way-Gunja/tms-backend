@@ -13,14 +13,16 @@ import (
 var globalClient *resty.Client
 var cacheDb *bow.DB
 
-func InitMap() error {
+func InitMap() (func(), error) {
 	globalClient = resty.New()
 	db, err := bow.Open("api_cache")
 	if err != nil {
-		return err
+		return nil, err
 	} else {
 		cacheDb = db
-		return nil
+		return func() {
+			db.Close()
+		}, nil
 	}
 }
 

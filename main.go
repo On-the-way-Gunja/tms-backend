@@ -44,6 +44,7 @@ func main() {
 	//Set logging
 	el := elogrus.Attach(e)
 	Logger = el.Logger
+	Logger.SetLevel(logrus.TraceLevel)
 	el.Logger.Formatter = new(prefixed.TextFormatter)
 	w := el.WriterLevel(logrus.ErrorLevel)
 	defer w.Close()
@@ -71,7 +72,11 @@ func main() {
 		e.AutoTLSManager.Cache = autocert.DirCache(".cache")
 	}
 
-	InitMap()
+	cancel, err := InitMap()
+	if err != nil {
+		e.Logger.Fatal(err)
+	}
+	defer cancel()
 
 	e.GET("/docs/*", echoSwagger.WrapHandler)
 	e.POST("/token", rIssueToken)
