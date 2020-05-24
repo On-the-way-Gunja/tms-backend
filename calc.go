@@ -37,8 +37,11 @@ func calculateActions(req CalculateRequest) (*CalculateResult, error) {
 func calculateAllDistance(req CalculateRequest) []PairWithDistance {
 	coords := req.Stuffs.Coordinates("all")
 	res := []PairWithDistance{}
-	for i := 0; i < len(coords)-1; i++ {
-		for j := i + 1; j < len(coords); j++ {
+	for i := 0; i < len(coords); i++ {
+		for j := 0; j < len(coords); j++ {
+			if i == j {
+				continue
+			}
 			_, r, _ := callDistanceApi(coords[i], coords[j])
 			res = append(res, PairWithDistance{
 				Pair: Pair{
