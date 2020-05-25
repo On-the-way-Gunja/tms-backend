@@ -6,6 +6,7 @@ require (
 	github.com/RyanCarrier/dijkstra v1.0.0
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
+	github.com/dgraph-io/badger/v2 v2.0.2-rc1
 	github.com/dictor/echologrus v1.0.0
 	github.com/go-openapi/spec v0.19.7 // indirect
 	github.com/go-openapi/swag v0.19.9 // indirect

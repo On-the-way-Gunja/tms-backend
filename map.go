@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	//"github.com/muesli/clusters"
+	badger "github.com/dgraph-io/badger/v2"
 	"github.com/yourbasic/graph"
-	"github.com/zippoxer/bow"
 	"math"
 )
 
 var globalClient *resty.Client
-var cacheDb *bow.DB
+var cacheDb *badger.DB
 
 func InitMap() (func(), error) {
 	globalClient = resty.New()
-	db, err := bow.Open("api_cache")
+	db, err := badger.Open(badger.DefaultOptions("/tmp/badger"))
 	if err != nil {
 		return nil, err
 	} else {
@@ -30,9 +30,21 @@ func callDistanceApi(start, goal Coordinate) (*[]byte, *NaverResponse, error) {
 	currentId := start.Id + "-" + goal.Id
 	var body []byte
 	iscached := false
-	if cacheDb.Bucket("distance").Get(currentId, &body) == nil {
-		iscached = true
-		Logger.Tracef("[callDistanceApi] Cache hit! : %s", currentId)
+
+	err := cacheDb.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte(currentId))
+		if err == nil {
+			iscached = true
+			err := item.Value(func(val []byte) error {
+				body = append([]byte{}, val...)
+				return nil
+			})
+			return err
+		}
+		return err
+	})
+	if err != nil {
+		return nil, nil, err
 	}
 
 	if !iscached {
@@ -51,7 +63,12 @@ func callDistanceApi(start, goal Coordinate) (*[]byte, *NaverResponse, error) {
 		if resp.StatusCode() != 200 {
 			return &body, nil, fmt.Errorf("Api provider return http response code %d (200 expected)", resp.StatusCode())
 		} else {
-			cacheDb.Bucket("distance").PutBytes(currentId, body)
+			err := cacheDb.Update(func(txn *badger.Txn) error {
+				return txn.Set([]byte(currentId), body)
+			})
+			if err != nil {
+				return &body, nil, err
+			}
 		}
 	}
 	res := NaverResponse{}
