@@ -32,8 +32,8 @@ func callDistanceApi(start, goal Coordinate) (*[]byte, *NaverResponse, error) {
 	iscached := false
 
 	err := cacheDb.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(currentId))
-		if err == nil {
+		item, errkey := txn.Get([]byte(currentId))
+		if errkey == nil {
 			iscached = true
 			err := item.Value(func(val []byte) error {
 				body = append([]byte{}, val...)
@@ -41,7 +41,7 @@ func callDistanceApi(start, goal Coordinate) (*[]byte, *NaverResponse, error) {
 			})
 			return err
 		}
-		return err
+		return nil
 	})
 	if err != nil {
 		return nil, nil, err
