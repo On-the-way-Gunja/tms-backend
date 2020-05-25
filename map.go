@@ -34,6 +34,7 @@ func callDistanceApi(start, goal Coordinate) (*[]byte, *NaverResponse, error) {
 	err := cacheDb.View(func(txn *badger.Txn) error {
 		item, errkey := txn.Get([]byte(currentId))
 		if errkey == nil {
+			Logger.Tracef("[callDistanceApi] Cache hit!: %s", currentId)
 			iscached = true
 			err := item.Value(func(val []byte) error {
 				body = append([]byte{}, val...)
