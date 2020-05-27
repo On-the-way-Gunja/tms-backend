@@ -34,7 +34,9 @@ func callDistanceApi(start, goal Coordinate) (*[]byte, *NaverResponse, error) {
 	err := cacheDb.View(func(txn *badger.Txn) error {
 		item, errkey := txn.Get([]byte(currentId))
 		if errkey == nil {
-			Logger.Tracef("[callDistanceApi] Cache hit!: %s", currentId)
+			if Logger != nil {
+				Logger.Tracef("[callDistanceApi] Cache hit!: %s", currentId)
+			}
 			iscached = true
 			err := item.Value(func(val []byte) error {
 				body = append([]byte{}, val...)
@@ -167,7 +169,11 @@ func AssignDriverToGraphs(graphs []DistanceGraph, drivers Drivers) map[string]*D
 						assignedidx = graphidx
 					}
 				}
-				graphs = append(graphs[:assignedidx], graphs[assignedidx+1:]...)
+				if len(graphs)-1 <= assignedidx+1 {
+					graphs = graphs[:assignedidx]
+				} else {
+					graphs = append(graphs[:assignedidx], graphs[assignedidx+1:]...)
+				}
 			}
 		}
 
